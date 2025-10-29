@@ -1,0 +1,191 @@
+@page "/connections"
+@using MovieMatch.Models
+@using MovieMatch.Services
+@inject UserService UserService
+@rendermode InteractiveServer
+
+<PageTitle>Connections</PageTitle>
+
+<div class="connections-container">
+    <h1>Your Connections</h1>
+
+    @if (connectedUsers.Any())
+    {
+        <div class="connected-users">
+            <h3>Connected Friends</h3>
+            <div class="user-list">
+                @foreach (var user in connectedUsers)
+                {
+                    <div class="user-card">
+                        <div class="user-info">
+                            <span class="bi bi-person-circle user-icon"></span>
+                            <span class="user-name">@user.Name</span>
+                        </div>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Disconnect(user.Id)">
+                            Disconnect
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="available-users">
+        <h3>Connect with Friends</h3>
+        @if (availableUsers.Any())
+        {
+            <div class="user-list">
+                @foreach (var user in availableUsers)
+                {
+                    <div class="user-card">
+                        <div class="user-info">
+                            <span class="bi bi-person-circle user-icon"></span>
+                            <span class="user-name">@user.Name</span>
+                        </div>
+                        <button class="btn btn-sm btn-success" @onclick="() => Connect(user.Id)">
+                            Connect
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+        else if (!loading)
+        {
+            <p class="text-muted">No more users available to connect with.</p>
+        }
+    </div>
+</div>
+
+<style>
+    .connections-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .connections-container h1 {
+        margin-bottom: 30px;
+        color: #333;
+    }
+
+    .connections-container h3 {
+        margin: 20px 0;
+        color: #555;
+        font-size: 1.3rem;
+    }
+
+    .connected-users {
+        margin-bottom: 40px;
+    }
+
+    .user-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .user-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .user-card:hover {
+        transform: translateX(5px);
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .user-icon {
+        font-size: 2rem;
+        color: #666;
+    }
+
+    .user-name {
+        font-size: 1.1rem;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .btn-sm {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-success {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #45a049;
+    }
+
+    .btn-danger {
+        background: #f44336;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #da190b;
+    }
+
+    @@media (max-width: 768px) {
+        .connections-container {
+            padding: 15px;
+        }
+
+        .user-card {
+            padding: 12px 15px;
+        }
+
+        .user-name {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+@code {
+    private List<User> connectedUsers = new();
+    private List<User> availableUsers = new();
+    private bool loading = true;
+    private int currentUserId = 1; // Demo user
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        loading = true;
+        connectedUsers = await UserService.GetConnectedUsersAsync(currentUserId);
+        availableUsers = await UserService.GetAvailableUsersToConnectAsync(currentUserId);
+        loading = false;
+    }
+
+    private async Task Connect(int userId)
+    {
+        await UserService.ConnectUsersAsync(currentUserId, userId);
+        await LoadUsers();
+    }
+
+    private async Task Disconnect(int userId)
+    {
+        await UserService.DisconnectUsersAsync(currentUserId, userId);
+        await LoadUsers();
+    }
+}
